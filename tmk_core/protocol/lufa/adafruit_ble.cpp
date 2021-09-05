@@ -34,11 +34,22 @@
 
 #define SCK_DIVISOR (F_CPU / AdafruitBleSpiClockSpeed)
 
-#define SAMPLE_BATTERY
+#define SAMPLE_BATTERY true
 #define ConnectionUpdateInterval 1000 /* milliseconds */
 
 #ifndef BATTERY_LEVEL_PIN
 #    define BATTERY_LEVEL_PIN B5
+#endif
+
+#ifndef MAX_BATTERY_VOLTAGE
+#   define MAX_BATTERY_VOLTAGE 4300
+#endif
+#ifndef MIN_BATTERY_VOLTAGE
+#   define MIN_BATTERY_VOLTAGE 2800
+#endif
+
+#ifndef POWER_LEVEL
+#    define POWER_LEVEL 4
 #endif
 
 static struct {
@@ -53,6 +64,7 @@ static struct {
 #ifdef SAMPLE_BATTERY
     uint16_t last_battery_update;
     uint32_t vbat;
+    uint16_t  batlevel;
 #endif
     uint16_t last_connection_update;
 } state;
@@ -99,6 +111,7 @@ struct queue_item {
         struct __attribute__((packed)) {
             int8_t  x, y, scroll, pan;
             uint8_t buttons;
+            bool release;
         } mousemove;
     };
 };
@@ -135,7 +148,7 @@ enum ble_system_event_bits {
     BleSystemMidiRx       = 10,
 };
 
-#define SdepTimeout 150             /* milliseconds */
+#define SdepTimeout 50              /* milliseconds */
 #define SdepShortTimeout 10         /* milliseconds */
 #define SdepBackOff 25              /* microseconds */
 #define BatteryUpdateInterval 10000 /* milliseconds */
@@ -243,7 +256,7 @@ static void resp_buf_read_one(bool greedy) {
             if (!msg.more) {
                 // We got it; consume this entry
                 resp_buf.get(last_send);
-                dprintf("recv latency %dms\n", TIMER_DIFF_16(timer_read(), last_send));
+                uprintf("recv latency %dms\n", TIMER_DIFF_16(timer_read(), last_send));
             }
 
             if (greedy && resp_buf.peek(last_send) && readPin(AdafruitBleIRQPin)) {
@@ -309,6 +322,11 @@ static bool ble_init(void) {
     writePinHigh(AdafruitBleResetPin);
 
     wait_ms(1000);  // Give it a second to initialize
+    char response2[8];
+    at_command("AT+GATTADDCHAR=UUID=0x2A4C,PROPERTIES=0x04", &response2[0], 8, 1, 50);
+    uprintf("AT+GATTADDCHAR=UUID=0x2A4C,PROPERTIES=0x04: %s\n", response2);
+    at_command("AT+BAUDRATE=115200", &response2[0], 8, 1, 50);
+    uprintf("AT+BAUDRATE=115200: %s\n", response2);
 
     state.initialized = true;
     return state.initialized;
@@ -373,6 +391,28 @@ static bool read_response(char *resp, uint16_t resplen, bool verbose) {
         dprintf("result: %s\n", resp);
     }
     return success;
+}
+
+static bool at_command_no_response(const char *cmd, bool verbose, uint16_t timeout) {
+    verbose             = true;
+    const char *    end = cmd + strlen(cmd);
+    struct sdep_msg msg;
+    if (verbose) {
+        dprintf("ble send: %s\n", cmd);
+    }
+
+    while (end - cmd > SdepMaxPayload) {
+        sdep_build_pkt(&msg, BleAtWrapper, (uint8_t *)cmd, SdepMaxPayload, true);
+        if (!sdep_send_pkt(&msg, timeout)) {
+            return false;
+        }
+        cmd += SdepMaxPayload;
+    }
+    sdep_build_pkt(&msg, BleAtWrapper, (uint8_t *)cmd, end - cmd, false);
+    if (!sdep_send_pkt(&msg, timeout)) {
+        return false;
+    }
+    return true;
 }
 
 static bool at_command(const char *cmd, char *resp, uint16_t resplen, bool verbose, uint16_t timeout) {
@@ -444,6 +484,9 @@ bool adafruit_ble_enable_keyboard(void) {
     // Turn on keyboard support
     static const char kHidEnOn[] PROGMEM = "AT+BLEHIDEN=1";
 
+    // Turn on Battery Level support
+    static const char kBatteryLevel[] PROGMEM = "AT+BLEBATTEN=1";
+
     // Adjust intervals to improve latency.  This causes the "central"
     // system (computer/tablet) to poll us every 10-30 ms.  We can't
     // set a smaller value than 10ms, and 30ms seems to be the natural
@@ -455,10 +498,8 @@ bool adafruit_ble_enable_keyboard(void) {
     static const char kATZ[] PROGMEM = "ATZ";
 
     // Turn down the power level a bit
-    static const char  kPower[] PROGMEM             = "AT+BLEPOWERLEVEL=-12";
-    static PGM_P const configure_commands[] PROGMEM = {
-        kEcho, kGapIntervals, kGapDevName, kHidEnOn, kPower, kATZ,
-    };
+    static const char  kPower[] PROGMEM             = "AT+BLEPOWERLEVEL=" STR(POWER_LEVEL);
+    static PGM_P const configure_commands[] PROGMEM = {kEcho, kGapIntervals, kGapDevName, kHidEnOn, kBatteryLevel, kPower, kATZ};
 
     uint8_t i;
     for (i = 0; i < sizeof(configure_commands) / sizeof(configure_commands[0]); ++i) {
@@ -466,7 +507,7 @@ bool adafruit_ble_enable_keyboard(void) {
         memcpy_P(&cmd, configure_commands + i, sizeof(cmd));
 
         if (!at_command_P(cmd, resbuf, sizeof(resbuf))) {
-            dprintf("failed BLE command: %S: %s\n", cmd, resbuf);
+            uprintf("failed BLE command: %S: %s\n", cmd, resbuf);
             goto fail;
         }
     }
@@ -483,9 +524,9 @@ fail:
 static void set_connected(bool connected) {
     if (connected != state.is_connected) {
         if (connected) {
-            dprint("BLE connected\n");
+            uprint("BLE connected\n");
         } else {
-            dprint("BLE disconnected\n");
+            uprint("BLE disconnected\n");
         }
         state.is_connected = connected;
 
@@ -556,9 +597,21 @@ void adafruit_ble_task(void) {
         state.last_battery_update = timer_read();
 
         state.vbat = analogReadPin(BATTERY_LEVEL_PIN);
+
+        // Convert millivolt readout to percentage, cap it between 0 and 100 percent.
+        state.batlevel = (((state.vbat * 2 * 3.3) - (int16_t)MIN_BATTERY_VOLTAGE) / ((int16_t)MAX_BATTERY_VOLTAGE-(int16_t)MIN_BATTERY_VOLTAGE)) * 100;
+        if (state.batlevel > 95) {
+            state.batlevel = 100;
+        } else if (state.batlevel < 0) {
+            state.batlevel = 0;
+        }
+
+        // Update battery level for the Battery Service (if enabled)
+        adafruit_ble_set_battery_level((uint8_t)state.batlevel);
     }
 #endif
 }
+
 
 static bool process_queue_item(struct queue_item *item, uint16_t timeout) {
     char cmdbuf[48];
@@ -566,6 +619,7 @@ static bool process_queue_item(struct queue_item *item, uint16_t timeout) {
 
     // Arrange to re-check connection after keys have settled
     state.last_connection_update = timer_read();
+    bool sendMouseKey = false;
 
 #if 1
     if (TIMER_DIFF_16(state.last_connection_update, item->added) > 0) {
@@ -586,25 +640,36 @@ static bool process_queue_item(struct queue_item *item, uint16_t timeout) {
 
 #ifdef MOUSE_ENABLE
         case QTMouseMove:
-            strcpy_P(fmtbuf, PSTR("AT+BLEHIDMOUSEMOVE=%d,%d,%d,%d"));
-            snprintf(cmdbuf, sizeof(cmdbuf), fmtbuf, item->mousemove.x, item->mousemove.y, item->mousemove.scroll, item->mousemove.pan);
-            if (!at_command(cmdbuf, NULL, 0, true, timeout)) {
-                return false;
-            }
+            if(item->mousemove.x > 1 || item->mousemove.x < -1 || item->mousemove.y > 1 || item->mousemove.y < -1 || !item->mousemove.scroll || !item->mousemove.pan) {
+                strcpy_P(fmtbuf, PSTR("AT+BLEHIDMOUSEMOVE=%d,%d,%d,%d"));
+                snprintf(cmdbuf, sizeof(cmdbuf), fmtbuf, item->mousemove.x, item->mousemove.y, item->mousemove.scroll, item->mousemove.pan);
+                at_command_no_response(cmdbuf, true, timeout);
+            }  
             strcpy_P(cmdbuf, PSTR("AT+BLEHIDMOUSEBUTTON="));
-            if (item->mousemove.buttons & MOUSE_BTN1) {
+            if (item->mousemove.buttons == 1) {
                 strcat(cmdbuf, "L");
+                sendMouseKey = true;
             }
-            if (item->mousemove.buttons & MOUSE_BTN2) {
+            if (item->mousemove.buttons == 2) {
                 strcat(cmdbuf, "R");
+                sendMouseKey = true;
             }
-            if (item->mousemove.buttons & MOUSE_BTN3) {
+            if (item->mousemove.buttons == 3) {
                 strcat(cmdbuf, "M");
+                sendMouseKey = true;
             }
-            if (item->mousemove.buttons == 0) {
-                strcat(cmdbuf, "0");
+            if(sendMouseKey) {
+                uprintf("%s\n", cmdbuf);
+                at_command_no_response(cmdbuf, true, timeout);
+                sendMouseKey = false;
+            } 
+            if(item->mousemove.release) {
+                wait_ms(20);
+                strcpy_P(cmdbuf, PSTR("AT+BLEHIDMOUSEBUTTON=0"));
+                uprintf("%s\n", cmdbuf);
+                at_command_no_response(cmdbuf, true, timeout);
             }
-            return at_command(cmdbuf, NULL, 0, true, timeout);
+            return true;
 #endif
         default:
             return true;
@@ -657,7 +722,7 @@ void adafruit_ble_send_consumer_key(uint16_t usage) {
 }
 
 #ifdef MOUSE_ENABLE
-void adafruit_ble_send_mouse_move(int8_t x, int8_t y, int8_t scroll, int8_t pan, uint8_t buttons) {
+void adafruit_ble_send_mouse_move(int8_t x, int8_t y, int8_t scroll, int8_t pan, uint8_t buttons, bool release) {
     struct queue_item item;
 
     item.queue_type        = QTMouseMove;
@@ -666,6 +731,7 @@ void adafruit_ble_send_mouse_move(int8_t x, int8_t y, int8_t scroll, int8_t pan,
     item.mousemove.scroll  = scroll;
     item.mousemove.pan     = pan;
     item.mousemove.buttons = buttons;
+    item.mousemove.release = release;
 
     while (!send_buf.enqueue(item)) {
         send_buf_send_one();
@@ -674,6 +740,7 @@ void adafruit_ble_send_mouse_move(int8_t x, int8_t y, int8_t scroll, int8_t pan,
 #endif
 
 uint32_t adafruit_ble_read_battery_voltage(void) { return state.vbat; }
+int16_t adafruit_ble_read_battery_level(void) { return state.batlevel; }
 
 bool adafruit_ble_set_mode_leds(bool on) {
     if (!state.configured) {
@@ -688,6 +755,15 @@ bool adafruit_ble_set_mode_leds(bool on) {
     // not connected, as that would be confusing.
     at_command_P(on && state.is_connected ? PSTR("AT+HWGPIO=19,1") : PSTR("AT+HWGPIO=19,0"), NULL, 0);
     return true;
+}
+
+bool adafruit_ble_set_battery_level(uint8_t level) {
+    char cmd[18];
+    if (!state.configured) {
+        return false;
+    }
+    snprintf(cmd, sizeof(cmd), "AT+BLEBATTVAL=%d", level);
+    return at_command(cmd, NULL, 0, false);
 }
 
 // https://learn.adafruit.com/adafruit-feather-32u4-bluefruit-le/ble-generic#at-plus-blepowerlevel

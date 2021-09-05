@@ -103,7 +103,7 @@ i2c_status_t i2c_start(uint8_t address, uint16_t timeout) {
     return status;
 }
 
-i2c_status_t i2c_write(uint8_t data, uint16_t timeout) {
+i2c_status_t i2c_write(uint16_t data, uint16_t timeout) {
     // load data into data register
     TWDR = data;
     // start transmission of data
@@ -187,7 +187,7 @@ i2c_status_t i2c_receive(uint8_t address, uint8_t* data, uint16_t length, uint16
     return (status < 0) ? status : I2C_STATUS_SUCCESS;
 }
 
-i2c_status_t i2c_writeReg(uint8_t devaddr, uint8_t regaddr, const uint8_t* data, uint16_t length, uint16_t timeout) {
+i2c_status_t i2c_writeReg(uint8_t devaddr, uint16_t regaddr, const uint8_t* data, uint16_t length, uint16_t timeout) {
     i2c_status_t status = i2c_start(devaddr | 0x00, timeout);
     if (status >= 0) {
         status = i2c_write(regaddr, timeout);
@@ -202,7 +202,7 @@ i2c_status_t i2c_writeReg(uint8_t devaddr, uint8_t regaddr, const uint8_t* data,
     return status;
 }
 
-i2c_status_t i2c_readReg(uint8_t devaddr, uint8_t regaddr, uint8_t* data, uint16_t length, uint16_t timeout) {
+i2c_status_t i2c_readReg(uint8_t devaddr, uint16_t regaddr, uint8_t* data, uint16_t length, uint16_t timeout) {
     i2c_status_t status = i2c_start(devaddr, timeout);
     if (status < 0) {
         goto error;
