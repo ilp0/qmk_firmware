@@ -33,6 +33,9 @@ void set_output(uint8_t output) {
     desired_output = output;
 }
 
+uint8_t get_output(void) {
+    return desired_output;
+}
 /** \brief Set Output User
  *
  * FIXME: Needs doc
