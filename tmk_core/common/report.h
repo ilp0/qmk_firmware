@@ -200,7 +200,6 @@ typedef struct {
     uint8_t report_id;
 #endif
     uint8_t buttons;
-    bool release;
     int8_t  x;
     int8_t  y;
     int8_t  v;

@@ -256,7 +256,7 @@ static void resp_buf_read_one(bool greedy) {
             if (!msg.more) {
                 // We got it; consume this entry
                 resp_buf.get(last_send);
-                uprintf("recv latency %dms\n", TIMER_DIFF_16(timer_read(), last_send));
+                dprintf("recv latency %dms\n", TIMER_DIFF_16(timer_read(), last_send));
             }
 
             if (greedy && resp_buf.peek(last_send) && readPin(AdafruitBleIRQPin)) {
@@ -323,10 +323,6 @@ static bool ble_init(void) {
 
     wait_ms(1000);  // Give it a second to initialize
     char response2[8];
-    at_command("AT+GATTADDCHAR=UUID=0x2A4C,PROPERTIES=0x04", &response2[0], 8, 1, 50);
-    uprintf("AT+GATTADDCHAR=UUID=0x2A4C,PROPERTIES=0x04: %s\n", response2);
-    at_command("AT+BAUDRATE=115200", &response2[0], 8, 1, 50);
-    uprintf("AT+BAUDRATE=115200: %s\n", response2);
 
     state.initialized = true;
     return state.initialized;
@@ -483,7 +479,7 @@ bool adafruit_ble_enable_keyboard(void) {
     static const char kGapDevName[] PROGMEM = "AT+GAPDEVNAME=" STR(PRODUCT);
     // Turn on keyboard support
     static const char kHidEnOn[] PROGMEM = "AT+BLEHIDEN=1";
-
+    static const char kBaudRate[] PROGMEM = "AT+BAUDRATE=115200";
     // Turn on Battery Level support
     static const char kBatteryLevel[] PROGMEM = "AT+BLEBATTEN=1";
 
@@ -498,8 +494,8 @@ bool adafruit_ble_enable_keyboard(void) {
     static const char kATZ[] PROGMEM = "ATZ";
 
     // Turn down the power level a bit
-    static const char  kPower[] PROGMEM             = "AT+BLEPOWERLEVEL=" STR(POWER_LEVEL);
-    static PGM_P const configure_commands[] PROGMEM = {kEcho, kGapIntervals, kGapDevName, kHidEnOn, kBatteryLevel, kPower, kATZ};
+    static const char  kPower[] PROGMEM = "AT+BLEPOWERLEVEL=" STR(POWER_LEVEL);
+    static PGM_P const configure_commands[] PROGMEM = {kEcho, kGapIntervals, kGapDevName, kBaudRate, kHidEnOn, kBatteryLevel, kPower, kATZ};
 
     uint8_t i;
     for (i = 0; i < sizeof(configure_commands) / sizeof(configure_commands[0]); ++i) {
@@ -662,9 +658,10 @@ static bool process_queue_item(struct queue_item *item, uint16_t timeout) {
                 uprintf("%s\n", cmdbuf);
                 at_command_no_response(cmdbuf, true, timeout);
                 sendMouseKey = false;
+
             } 
             if(item->mousemove.release) {
-                wait_ms(20);
+                wait_ms(50);
                 strcpy_P(cmdbuf, PSTR("AT+BLEHIDMOUSEBUTTON=0"));
                 uprintf("%s\n", cmdbuf);
                 at_command_no_response(cmdbuf, true, timeout);

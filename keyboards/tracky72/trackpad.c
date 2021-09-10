@@ -8,7 +8,7 @@
 #include "outputselect.h"
 
 uint8_t 	Data_Buff[44];
-uint8_t     activeRefreshRate[2] = {0,10};
+uint8_t     activeRefreshRate[2] = {0, TRACKPAD_RATE};
 uint8_t     idleRefreshRate[2] = {0,20};
 
 
@@ -43,7 +43,7 @@ void pointing_device_init(void) {
 	//
 	Close_Comms();
 
-	set_output(OUTPUT_BLUETOOTH);
+	set_output(OUTPUT_USB);
 
 }
 

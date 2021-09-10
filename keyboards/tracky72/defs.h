@@ -17,7 +17,7 @@
 #define FALSE 					0
 #define	TRUE 					!FALSE
 
-
+#define MOUSEWHEEL_SENSITIVITY 1
 
 void Process_XY(void);
 void IQS5xx_AcknowledgeReset(void); 

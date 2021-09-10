@@ -11,7 +11,7 @@
 #pragma once
 #include "quantum.h"
 
-void process_mouse_user(report_mouse_t* mouse_report, int16_t x, int16_t y, bool release, uint8_t buttons);
+void process_mouse_user(report_mouse_t* mouse_report, int16_t x, int16_t y);
 
 //*****************************************************************************
 //
