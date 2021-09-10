@@ -72,7 +72,7 @@
 #define MOUSEKEY_DELAY              0
 #define MOUSEKEY_TIME_TO_MAX        60
 #define MOUSEKEY_MAX_SPEED          6
-#define MOUSEKEY_WHEEL_DELAY        400
+#define MOUSEKEY_WHEEL_DELAY        200
 
 #define TRACKPAD_RATE        16
 

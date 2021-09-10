@@ -163,13 +163,14 @@ void Process_XY(void) {
                     if (i16RelY[1] < 0) {
                         mouseWheel = MOUSEWHEEL_SENSITIVITY;
                         tap_code(KC_MS_WH_DOWN);
+                    
                     } else {
                         mouseWheel = MOUSEWHEEL_SENSITIVITY * -1;
                         tap_code(KC_MS_WH_UP);
                     }
                     sendMovement = FALSE;
                     if (output == OUTPUT_BLUETOOTH) {
-                        wait_ms(100);
+                        wait_ms(MOUSEKEY_WHEEL_DELAY);
                     }
                     break;
                 }
