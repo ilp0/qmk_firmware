@@ -5,7 +5,7 @@
 #define SCROLL_ENABLED          TRUE
 
 #define IQS5xx_ADDR          	0x74
-#define RDY_PIN              	B7
+//#define RDY_PIN              	B7
 #define	END_WINDOW				(uint16_t)0xEEEE
 
 #define BitIsSet(VAR,Index)		(VAR & (1<<Index)) != 0

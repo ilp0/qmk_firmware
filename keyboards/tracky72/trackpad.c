@@ -18,7 +18,7 @@ void pointing_device_init(void) {
     print("\ntrackpad setup start\n");
 	// Configure RDY pin
 	//
-	setPinInputHigh(RDY_PIN);
+	//setPinInputHigh(RDY_PIN);
 	
 	I2C_Setup();
 	//
@@ -51,7 +51,7 @@ void pointing_device_init(void) {
 void pointing_device_task(void) {
     uint8_t		ui8TempData[30], i;
 
-	RDY_wait();
+	//RDY_wait();
 	
 	I2C_Read(GestureEvents0_adr, &Data_Buff[0], 44);
 

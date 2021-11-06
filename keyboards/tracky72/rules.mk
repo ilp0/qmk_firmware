@@ -2,7 +2,7 @@
 MCU = atmega32u4
 
 #     software delays.
-F_CPU = 8000000
+F_CPU = 16000000
 
 BOOTLOADER = caterina
 
@@ -10,7 +10,7 @@ BLUETOOTH = AdafruitBLE
 
 EXTRAFLAGS += -flto
 
-DEBUG_ENABLE = no
+DEBUG_ENABLE = yes
 BOOTMAGIC_ENABLE ?= no	# Virtual DIP switch configuration(+1000)
 MOUSEKEY_ENABLE = yes       # Mouse keys
 EXTRAKEY_ENABLE ?= yes	# Audio control and System control(+450)
@@ -22,9 +22,17 @@ BACKLIGHT_ENABLE ?= no  # Enable keyboard backlight functionality
 AUDIO_ENABLE ?= no
 RGBLIGHT_ENABLE ?= no
 MOUSE_SHARED_EP = no
-KEY_LOCK_ENABLE = yes
+#KEY_LOCK_ENABLE = yes
 MOUSE_ENABLE = yes
 
-SRC = trackpad.c IQS5xx.c i2c_fns.c
+SPLIT_KEYBOARD = yes
+
+
+OLED_ENABLE = no
+OLED_DRIVER_ENABLE = no
+WPM_ENABLE = no
+ENCODER_ENABLE = yes
+
+#SRC = trackpad.c IQS5xx.c i2c_fns.c
 
 POINTING_DEVICE_ENABLE = yes

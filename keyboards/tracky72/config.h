@@ -8,11 +8,12 @@
 #define PRODUCT_ID      0x7272
 #define DEVICE_VER      0x0001
 #define MANUFACTURER    Ilpo Loikkanen
-#define PRODUCT         tracky72
+#define PRODUCT         disconnect72
 #define DESCRIPTION     Split Keyboard
 
 #define NO_ACTION_MACRO
 #define NO_ACTION_FUNCTION
+#define NO_ACTION_TAPPING
 
 #ifndef NO_DEBUG
 #define NO_DEBUG
@@ -24,17 +25,30 @@
 #define AdafruitBleResetPin D4
 #define AdafruitBleCSPin B4
 #define AdafruitBleIRQPin E6
+// CUSTOM STUFF
+
+#define MASTER_LEFT 
+#define USE_I2C
 
 /* key matrix size */
-#define MATRIX_ROWS 5
-#define MATRIX_COLS 9
+#define MATRIX_ROWS 10
+#define MATRIX_COLS 8
 
-/* key matrix pins 
-#define MATRIX_ROW_PINS { B0, B1, B2, B3, C6 }
-#define MATRIX_COL_PINS { B5, B6, B7, C0, C1, C2, C3, C4, C5 }*/
+/* key matrix pins */
+#define MATRIX_ROW_PINS { F7, F6, F5, F4, F1 }
+#define MATRIX_COL_PINS { F0, B6, C7, D6, B7, D3, C6 }
 
+#define MATRIX_ROW_PINS_RIGHT { D4, C6, D7, E6, B4 }
+#define MATRIX_COL_PINS_RIGHT { D3, B5, B6, B2, B3, B1, F7, F6 }
+
+
+#define ENCODERS_PAD_A { B5 }
+#define ENCODERS_PAD_B { D7 }
+
+
+/*
 #define MATRIX_ROW_PINS { NO_PIN, NO_PIN, NO_PIN, NO_PIN, NO_PIN}
-#define MATRIX_COL_PINS { NO_PIN, NO_PIN, NO_PIN, NO_PIN, NO_PIN, NO_PIN, NO_PIN, NO_PIN, NO_PIN }
+#define MATRIX_COL_PINS { NO_PIN, NO_PIN, NO_PIN, NO_PIN, NO_PIN, NO_PIN, NO_PIN, NO_PIN, NO_PIN }*/
 
 #define UNUSED_PINS
 
@@ -48,7 +62,7 @@
 #endif
 
 /* Set 0 if debouncing isn't needed */
-#define DEBOUNCING_DELAY 1
+#define DEBOUNCING_DELAY 5
 
 /* key combination for command */
 #define IS_COMMAND() ( \

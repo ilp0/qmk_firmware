@@ -22,8 +22,6 @@ uint8_t I2C_Read2(uint16_t ui16RegisterAddress, uint8_t *pData, uint8_t ui8NoOfB
 //
 //! Setup I2C
 //!
-//! Enable the I2c module on the arduino board (including the pull-ups, 
-//! enabling of the ACK, and setting the clock frequency)
 //!
 //! \param None
 //!
@@ -46,7 +44,7 @@ void I2C_Setup(void)
 	//
 	ClearBit(TWSR, TWPS0);
 	ClearBit(TWSR, TWPS1);
-	TWBR = ((F_CPU / 100000) - 16) / 2;
+	TWBR = ((8000000 / 100000) - 16) / 2;
 	//
 	// Enable module, and set to ACK
 	//
@@ -149,14 +147,14 @@ uint8_t I2C_Read(uint16_t ui16RegisterAddress, uint8_t *pData, uint8_t ui8NoOfBy
 //! \return None
 //                                                      
 //*****************************************************************************
-void RDY_wait() 
-{
-	while(readPin(RDY_PIN) == 0)
-	{
-		__asm__("nop\n\t");
-	}
-
-}
+//void RDY_wait() 
+//{
+//	while(readPin(RDY_PIN) == 0)
+//	{
+//		__asm__("nop\n\t");
+//	}
+//
+//}
 
 //*****************************************************************************
 //
