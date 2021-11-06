@@ -42,11 +42,11 @@ void matrix_scan_user(void) {}
 
 bool process_record_user(uint16_t keycode, keyrecord_t *record) {
 #ifdef CONSOLE_ENABLE
-   //uprintf("KL: kc: 0x%04X, col: %u, row: %u, pressed: %b, time: %u, interrupt: %b, count: %u\n", keycode, record->event.key.col, record->event.key.row, record->event.pressed, record->event.time, record->tap.interrupted, record->tap.count);
+   uprintf("KL: kc: 0x%04X, col: %u, row: %u\n", keycode, record->event.key.col, record->event.key.row);
 #endif
     return true;
 }
-
+/*
 bool encoder_update_user(uint8_t index, bool clockwise) {
     if (!clockwise) {
         tap_code(KC_VOLD);
@@ -54,7 +54,7 @@ bool encoder_update_user(uint8_t index, bool clockwise) {
         tap_code(KC_VOLU);
     }
     return true;
-}
+}*/
 
 // OLED STUFF STARTS HERE
 // based on https://github.com/qmk/qmk_firmware/blob/master/keyboards/kyria/keymaps/j-inc/keymap.c

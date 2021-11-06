@@ -11,8 +11,6 @@
 uint8_t 	Data_Buff[44];
 uint8_t     activeRefreshRate[2] = {0, TRACKPAD_RATE};
 uint8_t     idleRefreshRate[2] = {0,20};
-
-
 uint16_t	ui16SnapStatus[15], ui16PrevSnap[15];
 
 void pointing_device_init(void) { 

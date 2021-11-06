@@ -22,9 +22,13 @@
 #define NO_PRINT
 #endif // !NO_PRINT
 
+#define LEFTSIDE
+
+#ifdef LEFTSIDE
 #define AdafruitBleResetPin D4
 #define AdafruitBleCSPin B4
 #define AdafruitBleIRQPin E6
+#endif
 // CUSTOM STUFF
 
 #define MASTER_LEFT 
@@ -42,8 +46,8 @@
 #define MATRIX_COL_PINS_RIGHT { D3, B5, B6, B2, B3, B1, F7, F6 }
 
 
-#define ENCODERS_PAD_A { B5 }
-#define ENCODERS_PAD_B { D7 }
+//#define ENCODERS_PAD_A { B5 }
+//#define ENCODERS_PAD_B { D7 }
 
 
 /*

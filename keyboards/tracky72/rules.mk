@@ -2,7 +2,9 @@
 MCU = atmega32u4
 
 #     software delays.
+#edit these
 F_CPU = 8000000
+SRC = trackpad.c IQS5xx.c i2c_fns.c
 
 BOOTLOADER = caterina
 
@@ -25,13 +27,13 @@ MOUSE_SHARED_EP = no
 #KEY_LOCK_ENABLE = yes
 MOUSE_ENABLE = yes
 
-SPLIT_KEYBOARD = no
+SPLIT_KEYBOARD = yes
 
+
+POINTING_DEVICE_ENABLE = yes
+
+#fix
+ENCODER_ENABLE = no
 OLED_ENABLE = no
 OLED_DRIVER_ENABLE = no
 WPM_ENABLE = no
-ENCODER_ENABLE = yes
-
-SRC = trackpad.c IQS5xx.c i2c_fns.c
-
-POINTING_DEVICE_ENABLE = yes

@@ -191,6 +191,7 @@ void Process_XY(void) {
                 adafruit_ble_send_mouse_move(0, 0, mouseWheel, 0, buttons, release);
             }
         } else if (output == OUTPUT_USB) {
+            uprintf("%u x %u y\n", i16RelX[1], i16RelY[1]);
             if (sendMovement) {
                 process_mouse_user(&mouse_report, (int16_t)i16RelX[1], (int16_t)i16RelY[1]);
                 pointing_device_set_report(mouse_report);
