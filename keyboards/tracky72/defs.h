@@ -20,5 +20,3 @@
 #define MOUSEWHEEL_SENSITIVITY 1
 
 void Process_XY(void);
-void IQS5xx_AcknowledgeReset(void); 
-void IQS5xx_CheckVersion(void);

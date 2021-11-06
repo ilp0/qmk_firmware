@@ -11,28 +11,6 @@
 extern uint8_t  Data_Buff[44];
 extern uint16_t ui16SnapStatus[15], ui16PrevSnap[15];
 
-void IQS5xx_AcknowledgeReset(void) {
-    static uint8_t System_ctrl_0 = ACK_RESET;
-
-    I2C_Write(SystemControl0_adr, &System_ctrl_0, 1);
-}
-
-void IQS5xx_CheckVersion(void) {
-    uint8_t ui8DataBuffer[6];
-
-    I2C_Read(ProductNumber_adr, &ui8DataBuffer[0], 6);
-
-    print("Product ");
-    uprintf("%u", (ui8DataBuffer[0] << 8) + ui8DataBuffer[1]);
-    print("  Project ");
-    uprintf("%u", (ui8DataBuffer[2] << 8) + ui8DataBuffer[3]);
-    print("  Version ");
-    uprintf("%u", ui8DataBuffer[4]);
-    print(".");
-    uprintf("\n%u", ui8DataBuffer[5]);
-}
-
-
 void DisplaySnap(void) {
     uint8_t  ui8Tx, ui8Rx;
     uint16_t ui16ToggledBits;
@@ -90,7 +68,6 @@ void Process_XY(void) {
     // Re-initialize the device if unexpected RESET detected
     if ((ui8SystemFlags[0] & SHOW_RESET) != 0) {
         print("\nRESET DETECTED");
-        IQS5xx_AcknowledgeReset();
         return;
     }
 
