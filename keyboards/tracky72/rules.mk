@@ -4,11 +4,11 @@ MCU = atmega32u4
 #     software delays.
 #edit these
 F_CPU = 8000000
-SRC = trackpad.c IQS5xx.c i2c_fns.c
-
-BOOTLOADER = caterina
+SRC = trackpad.c IQS5xx.c
 
 BLUETOOTH = AdafruitBLE
+
+BOOTLOADER = caterina
 
 EXTRAFLAGS += -flto
 
@@ -29,11 +29,10 @@ MOUSE_ENABLE = yes
 
 SPLIT_KEYBOARD = yes
 
-
 POINTING_DEVICE_ENABLE = yes
 
 #fix
-ENCODER_ENABLE = no
+#ENCODER_ENABLE = yes
 OLED_ENABLE = no
-OLED_DRIVER_ENABLE = no
+OLED_DRIVER_ENABLE = yes
 WPM_ENABLE = no

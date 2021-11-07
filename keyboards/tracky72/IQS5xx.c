@@ -42,6 +42,7 @@ __attribute__((weak)) void process_mouse_user(report_mouse_t* mouse_report, int1
 bool holdingMouse1 = FALSE;
 
 void Process_XY(void) {
+
     bool release       = FALSE;
     bool sendMovement  = TRUE;
     // bool holdingMouse2 = FALSE;
@@ -64,15 +65,15 @@ void Process_XY(void) {
     ui8SystemFlags[0] = Data_Buff[2];
     ui8SystemFlags[1] = Data_Buff[3];
     ui8NoOfFingers    = Data_Buff[4];
-    
-    // Re-initialize the device if unexpected RESET detected
+    /*
     if ((ui8SystemFlags[0] & SHOW_RESET) != 0) {
         print("\nRESET DETECTED");
         return;
-    }
+    }*/
 
     if ((ui8SystemFlags[1] & SNAP_TOGGLE) != 0) {
         // A snap state has changed, indicate which channel
+        print("\nsnap?");
         DisplaySnap();
         return;
     }
@@ -168,7 +169,6 @@ void Process_XY(void) {
 
                 break;
         }
-
         // absolute position for 5 fingers
         /*for (i = 0; i < 5; i++)
         {
@@ -207,6 +207,8 @@ void Process_XY(void) {
 
         release = FALSE;
     } else {
+        //print("no fignre \n");
+
         ui8FirstTouch = 0;
     }
 }

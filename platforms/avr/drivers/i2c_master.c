@@ -25,7 +25,7 @@
 #include "wait.h"
 
 #ifndef F_SCL
-#    define F_SCL 400000UL  // SCL frequency
+#    define F_SCL 100000UL  // SCL frequency
 #endif
 
 #ifndef I2C_START_RETRY_COUNT

@@ -11,10 +11,6 @@
 #define PRODUCT         disconnect72
 #define DESCRIPTION     Split Keyboard
 
-#define NO_ACTION_MACRO
-#define NO_ACTION_FUNCTION
-#define NO_ACTION_TAPPING
-
 #ifndef NO_DEBUG
 #define NO_DEBUG
 #endif // !NO_DEBUG
@@ -33,6 +29,7 @@
 
 #define MASTER_LEFT 
 #define USE_I2C
+#define EE_HANDS
 
 /* key matrix size */
 #define MATRIX_ROWS 10

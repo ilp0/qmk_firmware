@@ -21,12 +21,11 @@ void pointing_device_init(void) {
 	
 	//I2C_Setup();
 
-    i2c_writeReg16(IQS5xx_ADDR, ActiveRR_adr, &activeRefreshRate[0], 2, 100);
-    i2c_writeReg16(IQS5xx_ADDR, IdleRR_adr, &idleRefreshRate[0], 2, 100);
-    i2c_writeReg16(IQS5xx_ADDR, IdleTouchRR_adr, &idleRefreshRate[0], 2, 100);
-    i2c_writeReg16(IQS5xx_ADDR, LP1RR_adr, &idleRefreshRate[0], 2, 100);
-    i2c_writeReg16(IQS5xx_ADDR, LP2RR_adr, &idleRefreshRate[0], 2, 100);
-
+    i2c_writeReg16(IQS5xx_ADDR<<1, ActiveRR_adr, &activeRefreshRate[0], 2, 20);
+    i2c_writeReg16(IQS5xx_ADDR<<1, IdleRR_adr, &idleRefreshRate[0], 2, 20);
+    i2c_writeReg16(IQS5xx_ADDR<<1, IdleTouchRR_adr, &idleRefreshRate[0], 2, 20);
+    i2c_writeReg16(IQS5xx_ADDR<<1, LP1RR_adr, &idleRefreshRate[0], 2, 20);
+    i2c_writeReg16(IQS5xx_ADDR<<1, LP2RR_adr, &idleRefreshRate[0], 2, 20);
 	//
 	// End the communication window
 	//
@@ -40,15 +39,13 @@ void pointing_device_task(void) {
     uint8_t		ui8TempData[30], i;
 
 	//RDY_wait();
-	
-	i2c_readReg16(IQS5xx_ADDR, GestureEvents0_adr, &Data_Buff[0], 44, 100);
-
+	i2c_readReg16(IQS5xx_ADDR<<1, GestureEvents0_adr, &Data_Buff[0], 44, 20);
 	if((Data_Buff[3] & SNAP_TOGGLE) != 0)
 	{
 		// If there was a change in a snap status, then read the snap status 
 		// bytes additionally. Keep previous valus to identify a state change
 		//
-		i2c_readReg16(IQS5xx_ADDR,SnapStatus_adr, &ui8TempData[0], 30, 100);
+		i2c_readReg16(IQS5xx_ADDR<<1,SnapStatus_adr, &ui8TempData[0], 30, 20);
 		for(i = 0; i < 15; i++)
 		{
 			ui16PrevSnap[i] = ui16SnapStatus[i];
