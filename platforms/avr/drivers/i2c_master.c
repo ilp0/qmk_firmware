@@ -25,11 +25,11 @@
 #include "wait.h"
 
 #ifndef F_SCL
-#    define F_SCL 100000UL  // SCL frequency
+#    define F_SCL 400000UL  // SCL frequency
 #endif
 
 #ifndef I2C_START_RETRY_COUNT
-#    define I2C_START_RETRY_COUNT 20
+#    define I2C_START_RETRY_COUNT 5
 #endif  // I2C_START_RETRY_COUNT
 
 #define TWBR_val (((F_CPU / F_SCL) - 16) / 2)

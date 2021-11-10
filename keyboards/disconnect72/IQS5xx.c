@@ -1,5 +1,4 @@
-#include "defs.h"
-#include "i2c_fns.h"
+#include "config.h"
 #include "IQS5xx.h"
 #include "print.h"
 #include "pointing_device.h"
@@ -8,31 +7,7 @@
 #include "adafruit_ble.h"
 #include "outputselect.h"
 
-extern uint8_t  Data_Buff[44];
-extern uint16_t ui16SnapStatus[15], ui16PrevSnap[15];
-
-void DisplaySnap(void) {
-    uint8_t  ui8Tx, ui8Rx;
-    uint16_t ui16ToggledBits;
-
-    for (ui8Tx = 0; ui8Tx < 15; ui8Tx++) {
-        ui16ToggledBits = ui16PrevSnap[ui8Tx] ^ ui16SnapStatus[ui8Tx];
-
-        for (ui8Rx = 0; ui8Rx < 10; ui8Rx++) {
-            if (BitIsSet(ui16ToggledBits, ui8Rx)) {
-                if (BitIsSet(ui16SnapStatus[ui8Tx], ui8Rx)) {
-                    print("Snap set on Rx");
-                } else {
-                    print("Snap released on Rx");
-                }
-                uprintf("%u", ui8Rx);
-                print("/Tx");
-                uprintf("%u", ui8Tx);
-                uprintf("\n channel    ");
-            }
-        }
-    }
-}
+extern uint8_t Data_Buff[44];
 
 __attribute__((weak)) void process_mouse_user(report_mouse_t* mouse_report, int16_t x, int16_t y) {
     mouse_report->x = x;
@@ -42,18 +17,19 @@ __attribute__((weak)) void process_mouse_user(report_mouse_t* mouse_report, int1
 bool holdingMouse1 = FALSE;
 
 void Process_XY(void) {
-
-    bool release       = FALSE;
-    bool sendMovement  = TRUE;
+#ifdef BLUETOOTH
+    bool release = FALSE;
+#endif
+    bool sendMovement = TRUE;
     // bool holdingMouse2 = FALSE;
     // uint8_t 	i;
     static uint8_t ui8FirstTouch = 0;
     uint8_t        ui8NoOfFingers;
-    uint8_t        ui8SystemFlags[2];
-    int16_t        i16RelX[6];
-    int16_t        i16RelY[6];
-    uint8_t        buttons      = 0;
-    int8_t         mouseWheel   = 0;
+    // uint8_t        ui8SystemFlags[2];
+    int16_t i16RelX[6];
+    int16_t i16RelY[6];
+    uint8_t buttons = 0;
+    // int8_t         mouseWheel   = 0;
     uint8_t        output       = get_output();
     report_mouse_t mouse_report = {};
 
@@ -61,22 +37,7 @@ void Process_XY(void) {
     // int8_t         mousePan = 0;
     // uint16_t ui16TouchStrength[6];
     // uint8_t  	ui8Area[6];
-
-    ui8SystemFlags[0] = Data_Buff[2];
-    ui8SystemFlags[1] = Data_Buff[3];
     ui8NoOfFingers    = Data_Buff[4];
-    /*
-    if ((ui8SystemFlags[0] & SHOW_RESET) != 0) {
-        print("\nRESET DETECTED");
-        return;
-    }*/
-
-    if ((ui8SystemFlags[1] & SNAP_TOGGLE) != 0) {
-        // A snap state has changed, indicate which channel
-        print("\nsnap?");
-        DisplaySnap();
-        return;
-    }
 
     if (output == OUTPUT_USB) mouse_report = pointing_device_get_report();
     // single click
@@ -90,7 +51,9 @@ void Process_XY(void) {
         }
         buttons = 1;
         uprintf("%u tap\n", buttons);
-        release      = TRUE;
+#ifdef BLUETOOTH
+        release = TRUE;
+#endif
 
     }
     // double click
@@ -100,12 +63,16 @@ void Process_XY(void) {
         }
         buttons = 2;
         uprintf("%u tap\n", buttons);
-        release      = TRUE;
+#ifdef BLUETOOTH
+        release = TRUE;
+#endif
         sendMovement = FALSE;
     }
 
     i16RelX[1] = ((Data_Buff[5] << 8) | (Data_Buff[6]));
     i16RelY[1] = ((Data_Buff[7] << 8) | (Data_Buff[8]));
+    // uprintf("%d x \n", Data_Buff[5]);
+
     // first finger touch strength
     // ui16TouchStrength[1] = ((Data_Buff[13] << 8) | (Data_Buff[14])); //13-20-27-34-11/14-21-28-35-42
 
@@ -113,7 +80,7 @@ void Process_XY(void) {
 
     if (ui8NoOfFingers != 0 || buttons) {
         if (!(ui8FirstTouch)) {
-            // print("Data:\n");
+            print("Data:\n");
             ui8FirstTouch = 1;
         }
 
@@ -123,10 +90,14 @@ void Process_XY(void) {
                 if (!holdingMouse1) {
                     buttons       = 1;
                     holdingMouse1 = TRUE;
-                    release       = FALSE;
+#ifdef BLUETOOTH
+                    release = FALSE;
+#endif
                 } else {
                     holdingMouse1 = TRUE;
-                    release       = FALSE;
+#ifdef BLUETOOTH
+                    release = FALSE;
+#endif
                 }
                 break;
         }
@@ -139,12 +110,14 @@ void Process_XY(void) {
             case SCROLL:
                 if (SCROLL_ENABLED) {
                     if (i16RelY[1] < 0) {
-                        mouseWheel = MOUSEWHEEL_SENSITIVITY;
+                        // mouseWheel = MOUSEWHEEL_SENSITIVITY;
                         tap_code(KC_MS_WH_DOWN);
-                    
+                        wait_ms(5);
+
                     } else {
-                        mouseWheel = MOUSEWHEEL_SENSITIVITY * -1;
+                        // mouseWheel = MOUSEWHEEL_SENSITIVITY * -1;
                         tap_code(KC_MS_WH_UP);
+                        wait_ms(5);
                     }
                     sendMovement = FALSE;
                     if (output == OUTPUT_BLUETOOTH) {
@@ -177,23 +150,25 @@ void Process_XY(void) {
             ui16TouchStrength[i+1] = ((Data_Buff[(7*i)+13] << 8) | (Data_Buff[(7*i)+14])); //13-20-27-34-11/14-21-28-35-42
             ui8Area[i+1] = (Data_Buff[7*i+15]); //15-22-29-36-43
         }*/
+        if (i16RelX[1] < -120) i16RelX[1] = 0;
+        if (i16RelX[1] > 120) i16RelX[1] = 0;
+        if (i16RelY[1] < -120) i16RelY[1] = 0;
+        if (i16RelY[1] > 120) i16RelY[1] = 0;
 
-        if (i16RelX[1] < -127) i16RelX[1] = -127;
-        if (i16RelX[1] > 127) i16RelX[1] = 127;
-        if (i16RelY[1] < -127) i16RelY[1] = -127;
-        if (i16RelY[1] > 127) i16RelY[1] = 127;
+        uprintf("x %d y %d\n", i16RelX[1], i16RelY[1]);
 
         if (output == OUTPUT_BLUETOOTH) {
+#ifdef BLUETOOTH
             if ((sendMovement && buttons == 0) || (sendMovement && holdingMouse1) || release != 0) {
                 adafruit_ble_send_mouse_move((int8_t)i16RelX[1], (int8_t)i16RelY[1], mouseWheel, 0, buttons, release);
-                
+
             } else {
                 adafruit_ble_send_mouse_move(0, 0, mouseWheel, 0, buttons, release);
             }
+#endif
         } else if (output == OUTPUT_USB) {
-            uprintf("%u x %u y\n", i16RelX[1], i16RelY[1]);
             if (sendMovement) {
-                process_mouse_user(&mouse_report, (int16_t)i16RelX[1], (int16_t)i16RelY[1]);
+                process_mouse_user(&mouse_report, (int16_t)i16RelX[1] * -1, (int16_t)i16RelY[1] * -1);
                 pointing_device_set_report(mouse_report);
                 pointing_device_send();
             } else {
@@ -204,11 +179,10 @@ void Process_XY(void) {
         } else {
             print("unknown output");
         }
-
+#ifdef BLUETOOTH
         release = FALSE;
+#endif
     } else {
-        //print("no fignre \n");
-
         ui8FirstTouch = 0;
     }
 }
