@@ -65,6 +65,9 @@
 /* Set 0 if debouncing isn't needed */
 #define DEBOUNCING_DELAY 4
 
+/* reduce polling rate to 1000hz */
+#define USB_POLLING_INTERVAL_MS 1
+
 /* key combination for command */
 #define IS_COMMAND() ( \
     keyboard_report->mods == (MOD_BIT(KC_LSHIFT) | MOD_BIT(KC_RSHIFT)) \

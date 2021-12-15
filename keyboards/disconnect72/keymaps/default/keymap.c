@@ -1,6 +1,7 @@
 #include "disconnect72.h"
 #include <stdio.h>
 #include "outputselect.h"
+#include "adafruit_ble.h"
 
 enum layers { _QWERTY, _FN };
 
@@ -8,6 +9,7 @@ enum layers { _QWERTY, _FN };
 char    wpm_str[10];
 char    kc_string[10];
 uint8_t kc_string_rows = 0;
+char    battery_str[10];
 #endif
 
 enum custom_keycodes {
@@ -30,7 +32,7 @@ void matrix_init_user(void) {}
 void matrix_scan_user(void) {
     if (timer_elapsed32(key_timer) > 30000) {  // 30 seconds
         key_timer = timer_read32();            // resets timer
-        if (key_trigger) tap_code(KC_NO);      // tap if enabled
+        if (key_trigger) tap_code(KC_BTN1);      // tap if enabled
     }
 }
 
@@ -41,13 +43,16 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
     switch (keycode) {
         case KEY_TIMER:
             if (record->event.pressed) {
-                key_trigger ^= true;
+                if(key_trigger) rgblight_mode_noeeprom(RGBLIGHT_MODE_BREATHING);
+                else rgblight_reload_from_eeprom();
+                if(key_trigger) key_trigger = false;
+                else key_trigger = true;
             }
             break;
     }
 #ifdef OLED_ENABLE
-    if (kc_string_rows > 6) kc_string_rows = 0;
-    oled_set_cursor(0, 8 + kc_string_rows);
+    if (kc_string_rows > 4) kc_string_rows = 0;
+    oled_set_cursor(0, 12 + kc_string_rows);
     sprintf(kc_string, "0x%03X", keycode);
     kc_string[5] = '\0';
     oled_write(kc_string, false);
@@ -55,14 +60,31 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
 #endif
     return true;
 }
-
+/*
 bool encoder_update_user(uint8_t index, bool clockwise) {
     if (!clockwise) {
         tap_code(KC_VOLD);
     } else {
         tap_code(KC_VOLU);
     }
-    return true;
+    return false;
+}*/
+
+bool encoder_update_user(uint8_t index, bool clockwise) {
+    if (index == 0) { /* First encoder */
+        if (clockwise) {
+            tap_code(KC_PGDN);
+        } else {
+            tap_code(KC_PGUP);
+        }
+    } else if (index == 1) { /* Second encoder */
+        if (clockwise) {
+            tap_code(KC_DOWN);
+        } else {
+            tap_code(KC_UP);
+        }
+    }
+    return false;
 }
 
 #ifdef OLED_ENABLE
@@ -97,9 +119,13 @@ void oled_task_user(void) {
         else
             oled_write_P(PSTR("OFF\n"), false);
         oled_set_cursor(0, 7);
-        sprintf(wpm_str, "%02dKPS\n", (int)((float)get_current_wpm() / 60 * 5));
-        oled_write(wpm_str, false);
+        oled_write_P(PSTR("WPM\n"), false);
         oled_set_cursor(0, 8);
+        sprintf(wpm_str, "%03d\n", get_current_wpm());
+        oled_write(wpm_str, false);
+        oled_set_cursor(0, 10);
+        sprintf(battery_str, "%03d%%\n",adafruit_ble_read_battery_level());
+        oled_write(battery_str, false);
     }
 }
 #endif
